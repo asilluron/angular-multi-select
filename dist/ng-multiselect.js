@@ -1,37 +1,37 @@
-/*
- * Angular JS Multi Select
- * Creates a dropdown-like button with checkboxes.
- *
- * Project started on: Tue, 14 Jan 2014 - 5:18:02 PM
- * Current version: 2.0.1
- *
- * Released under the MIT License
- * --------------------------------------------------------------------------------
+/**
+ * ng-multiselect - Angular multiselect directive
+ * @version v0.0.0
+ * @link https://github.com/asilluron/angular-multi-select
+ * @license MIT
  * The MIT License (MIT)
- *
- * Copyright (c) 2014 Ignatius Steven (https://github.com/isteven)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- * --------------------------------------------------------------------------------
- */
 
-angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeout', '$q',
+Copyright (c) 2014 Andrew Silluron (https://github.com/asilluron)
+Portions Copyright (c) 2014 Ignatius Steven (https://github.com/isteven)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+ */
+angular.module('multiSelect.templates', []).run(['$templateCache', function($templateCache) {
+    $templateCache.put('multiselect.html',
+        "<span class=\"multiSelect inlineBlock\">\n<button type=\"button\" class=\"button multiSelectButton\" ng-click=\"toggleCheckboxes( $event ); refreshSelectedItems(); refreshButton();\" ng-bind-html=\"varButtonLabel\">\n</button>\n<div class=\"checkboxLayer\">\n    <form>\n        <div class=\"helperContainer\" ng-if=\"displayHelper( 'filter' ) || displayHelper( 'all' ) || displayHelper( 'none' ) || displayHelper( 'reset' )\">\n            <div class=\"line\" ng-if=\"displayHelper( 'all' ) || displayHelper( 'none' ) || displayHelper( 'reset' )\">\n                <button type=\"button\" ng-click=\"select( 'all',   $event );\"    class=\"helperButton\" ng-if=\"!isDisabled && displayHelper( 'all' )\">   &#10003;&nbsp; Select All</button>\n                <button type=\"button\" ng-click=\"select( 'none',  $event );\"   class=\"helperButton\" ng-if=\"!isDisabled && displayHelper( 'none' )\">  &times;&nbsp; Select None</button>\n                <button type=\"button\" ng-click=\"select( 'reset', $event );\"  class=\"helperButton\" ng-if=\"!isDisabled && displayHelper( 'reset' )\" style=\"float:right\">&#8630;&nbsp; Reset</button>\n            </div>\n            <div class=\"line\" style=\"position:relative\" ng-if=\"displayHelper( 'filter' )\">\n                <input placeholder=\"Search...\" type=\"text\" ng-click=\"select( 'filter', $event )\" ng-model=\"inputLabel.labelFilter\" ng-change=\"updateFilter();$scope.getFormElements();\" class=\"inputFilter\">\n                <button type=\"button\" class=\"clearButton\" ng-click=\"inputLabel.labelFilter='';updateFilter();prepareGrouping();prepareIndex();select( 'clear', $event )\">&times;</button>\n            </div>\n        </div>\n        <div class=\"checkBoxContainer\" style=\"{{setHeight();}}\">\n            <div ng-repeat=\"item in filteredModel | filter:removeGroupEndMarker\" class=\"multiSelectItem\"ng-class=\"{selected: item[ tickProperty ], horizontal: orientationH, vertical: orientationV, multiSelectGroup:item[ groupProperty ], disabled:itemIsDisabled( item )}\"ng-click=\"syncItems( item, $event, $index );\"ng-mouseleave=\"removeFocusStyle( tabIndex );\">\n                <div class=\"acol\" ng-if=\"item[ spacingProperty ] > 0\" ng-repeat=\"i in numberToArray( item[ spacingProperty ] ) track by $index\">&nbsp;</div>\n                <div class=\"acol\">\n                    <label>\n                        <input class=\"checkbox focusable\" type=\"checkbox\" ng-disabled=\"itemIsDisabled( item )\" ng-checked=\"item[ tickProperty ]\" ng-click=\"syncItems( item, $event, $index )\">\n                        <span ng-class=\"{disabled:itemIsDisabled( item )}\" ng-bind-html=\"writeLabel( item, 'itemLabel' )\"></span>\n                    </label>\n                </div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n                <span class=\"tickMark\" ng-if=\"item[ groupProperty ] !== true && item[ tickProperty ] === true\">&#10004;</span>\n            </div>\n        </div>\n    </form>\n</div>\n</span>\n");
+}]);
+angular.module('multi-select', ['ng', 'multiSelect.templates']).directive('multiSelect', ['$sce', '$timeout', '$q',
     function($sce, $timeout, $q) {
         return {
             restrict: 'AE',
@@ -66,41 +66,7 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                 onOpen: '&'
             },
 
-            template: '<span class="multiSelect inlineBlock">' +
-                '<button type="button" class="button multiSelectButton" ng-click="toggleCheckboxes( $event ); refreshSelectedItems(); refreshButton();" ng-bind-html="varButtonLabel">' +
-                '</button>' +
-                '<div class="checkboxLayer">' +
-                '<form>' +
-                '<div class="helperContainer" ng-if="displayHelper( \'filter\' ) || displayHelper( \'all\' ) || displayHelper( \'none\' ) || displayHelper( \'reset\' )">' +
-                '<div class="line" ng-if="displayHelper( \'all\' ) || displayHelper( \'none\' ) || displayHelper( \'reset\' )">' +
-                '<button type="button" ng-click="select( \'all\',   $event );"    class="helperButton" ng-if="!isDisabled && displayHelper( \'all\' )">   &#10003;&nbsp; Select All</button> ' +
-                '<button type="button" ng-click="select( \'none\',  $event );"   class="helperButton" ng-if="!isDisabled && displayHelper( \'none\' )">  &times;&nbsp; Select None</button>' +
-                '<button type="button" ng-click="select( \'reset\', $event );"  class="helperButton" ng-if="!isDisabled && displayHelper( \'reset\' )" style="float:right">&#8630;&nbsp; Reset</button>' +
-                '</div>' +
-                '<div class="line" style="position:relative" ng-if="displayHelper( \'filter\' )">' +
-                '<input placeholder="Search..." type="text" ng-click="select( \'filter\', $event )" ng-model="inputLabel.labelFilter" ng-change="updateFilter();$scope.getFormElements();" class="inputFilter" />' +
-                '<button type="button" class="clearButton" ng-click="inputLabel.labelFilter=\'\';updateFilter();prepareGrouping();prepareIndex();select( \'clear\', $event )">&times;</button> ' +
-                '</div>' +
-                '</div>' +
-                '<div class="checkBoxContainer" style="{{setHeight();}}">' +
-                '<div ng-repeat="item in filteredModel | filter:removeGroupEndMarker" class="multiSelectItem"' +
-                'ng-class="{selected: item[ tickProperty ], horizontal: orientationH, vertical: orientationV, multiSelectGroup:item[ groupProperty ], disabled:itemIsDisabled( item )}"' +
-                'ng-click="syncItems( item, $event, $index );"' +
-                'ng-mouseleave="removeFocusStyle( tabIndex );">' +
-                '<div class="acol" ng-if="item[ spacingProperty ] > 0" ng-repeat="i in numberToArray( item[ spacingProperty ] ) track by $index">&nbsp;</div>' +
-                '<div class="acol">' +
-                '<label>' +
-                '<input class="checkbox focusable" type="checkbox" ng-disabled="itemIsDisabled( item )" ng-checked="item[ tickProperty ]" ng-click="syncItems( item, $event, $index )" />' +
-                '<span ng-class="{disabled:itemIsDisabled( item )}" ng-bind-html="writeLabel( item, \'itemLabel\' )"></span>' +
-                '</label>' +
-                '</div>' +
-                '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
-                '<span class="tickMark" ng-if="item[ groupProperty ] !== true && item[ tickProperty ] === true">&#10004;</span>' +
-                '</div>' +
-                '</div>' +
-                '</form>' +
-                '</div>' +
-                '</span>',
+            templateUrl: 'multiselect.html',
 
             link: function($scope, element, attrs) {
                 var resolvedInputModel;

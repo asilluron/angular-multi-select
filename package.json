@@ -1,0 +1,27 @@
+{
+  "name": "ng-multiselect",
+  "version": "0.0.0",
+  "description": "Angular multiselect directive",
+  "main": "dist/angular-multiselect.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "gulp": "^3.8.8",
+    "gulp-angular-templates": "0.0.1",
+    "gulp-concat": "^2.4.1",
+    "gulp-header": "^1.1.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asilluron/angular-multi-select.git"
+  },
+  "author": "Andrew Silluron. Original by Ignatius Steven",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/asilluron/angular-multi-select/issues"
+  },
+  "homepage": "https://github.com/asilluron/angular-multi-select"
+}
