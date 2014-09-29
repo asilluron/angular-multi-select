@@ -31,8 +31,8 @@
  * --------------------------------------------------------------------------------
  */
 
-angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeout',
-    function($sce, $timeout) {
+angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeout', '$q',
+    function($sce, $timeout, $q) {
         return {
             restrict: 'AE',
 
@@ -103,7 +103,7 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                 '</span>',
 
             link: function($scope, element, attrs) {
-
+                var resolvedInputModel;
                 $scope.backUp = [];
                 $scope.varButtonLabel = '';
                 $scope.scrolled = false;
@@ -139,44 +139,43 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
 
                 $scope.updateFilter = function() {
                     // we check by looping from end of array
-                    $scope.filteredModel = [];
                     var i = 0;
 
-                    if (typeof $scope.inputModel === 'undefined') {
+                    if (typeof resolvedInputModel === 'undefined') {
                         return [];
                     }
 
-                    for (i = $scope.inputModel.length - 1; i >= 0; i--) {
+                    for (i = resolvedInputModel.length - 1; i >= 0; i--) {
 
                         // if it's group end
-                        if (typeof $scope.inputModel[i][$scope.groupProperty] !== 'undefined' && $scope.inputModel[i][$scope.groupProperty] === false) {
-                            $scope.filteredModel.push($scope.inputModel[i]);
+                        if (typeof resolvedInputModel[i][$scope.groupProperty] !== 'undefined' && resolvedInputModel[i][$scope.groupProperty] === false) {
+                            $scope.filteredModel.push(resolvedInputModel[i]);
                         }
 
                         // if it's data
                         var gotData = false;
-                        if (typeof $scope.inputModel[i][$scope.groupProperty] === 'undefined') {
+                        if (typeof resolvedInputModel[i][$scope.groupProperty] === 'undefined') {
 
-                            for (var key in $scope.inputModel[i]) {
+                            for (var key in resolvedInputModel[i]) {
                                 // if filter string is in one of object property
-                                if (typeof $scope.inputModel[i][key] !== 'boolean' && String($scope.inputModel[i][key]).toUpperCase().indexOf($scope.inputLabel.labelFilter.toUpperCase()) >= 0) {
+                                if (typeof resolvedInputModel[i][key] !== 'boolean' && String(resolvedInputModel[i][key]).toUpperCase().indexOf($scope.inputLabel.labelFilter.toUpperCase()) >= 0) {
                                     gotData = true;
                                     break;
                                 }
                             }
                             if (gotData === true) {
                                 // push
-                                $scope.filteredModel.push($scope.inputModel[i]);
+                                $scope.filteredModel.push(resolvedInputModel[i]);
                             }
                         }
 
                         // if it's group start
-                        if (typeof $scope.inputModel[i][$scope.groupProperty] !== 'undefined' && $scope.inputModel[i][$scope.groupProperty] === true) {
+                        if (typeof resolvedInputModel[i][$scope.groupProperty] !== 'undefined' && resolvedInputModel[i][$scope.groupProperty] === true) {
 
                             if (typeof $scope.filteredModel[$scope.filteredModel.length - 1][$scope.groupProperty] !== 'undefined' && $scope.filteredModel[$scope.filteredModel.length - 1][$scope.groupProperty] === false) {
                                 $scope.filteredModel.pop();
                             } else {
-                                $scope.filteredModel.push($scope.inputModel[i]);
+                                $scope.filteredModel.push(resolvedInputModel[i]);
                             }
                         }
                     }
@@ -251,7 +250,6 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
 
                 // call this function when an item is clicked
                 $scope.syncItems = function(item, e, ng_repeat_index) {
-
                     e.preventDefault();
                     e.stopPropagation();
 
@@ -329,12 +327,12 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                                                     $scope.filteredModel[j][$scope.tickProperty] = false;
                                                     // we refresh input model as well
                                                     inputModelIndex = $scope.filteredModel[j][$scope.indexProperty];
-                                                    $scope.inputModel[inputModelIndex][$scope.tickProperty] = false;
+                                                    resolvedInputModel[inputModelIndex][$scope.tickProperty] = false;
                                                 } else if ($scope.filteredModel[j][$scope.disableProperty] !== true) {
                                                     $scope.filteredModel[j][$scope.tickProperty] = false;
                                                     // we refresh input model as well
                                                     inputModelIndex = $scope.filteredModel[j][$scope.indexProperty];
-                                                    $scope.inputModel[inputModelIndex][$scope.tickProperty] = false;
+                                                    resolvedInputModel[inputModelIndex][$scope.tickProperty] = false;
                                                 }
                                             }
                                         }
@@ -345,13 +343,13 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                                                     $scope.filteredModel[j][$scope.tickProperty] = true;
                                                     // we refresh input model as well
                                                     inputModelIndex = $scope.filteredModel[j][$scope.indexProperty];
-                                                    $scope.inputModel[inputModelIndex][$scope.tickProperty] = true;
+                                                    resolvedInputModel[inputModelIndex][$scope.tickProperty] = true;
 
                                                 } else if ($scope.filteredModel[j][$scope.disableProperty] !== true) {
                                                     $scope.filteredModel[j][$scope.tickProperty] = true;
                                                     // we refresh input model as well
                                                     inputModelIndex = $scope.filteredModel[j][$scope.indexProperty];
-                                                    $scope.inputModel[inputModelIndex][$scope.tickProperty] = true;
+                                                    resolvedInputModel[inputModelIndex][$scope.tickProperty] = true;
                                                 }
                                             }
                                         }
@@ -376,8 +374,8 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                             for (i = 0; i < $scope.filteredModel.length; i++) {
                                 $scope.filteredModel[i][$scope.tickProperty] = false;
                             }
-                            for (i = 0; i < $scope.inputModel.length; i++) {
-                                $scope.inputModel[i][$scope.tickProperty] = false;
+                            for (i = 0; i < resolvedInputModel.length; i++) {
+                                resolvedInputModel[i][$scope.tickProperty] = false;
                             }
 
                             // then set the clicked item to true
@@ -393,7 +391,7 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
 
                         // we refresh input model as well
                         inputModelIndex = $scope.filteredModel[index][$scope.indexProperty];
-                        $scope.inputModel[inputModelIndex][$scope.tickProperty] = $scope.filteredModel[index][$scope.tickProperty];
+                        resolvedInputModel[inputModelIndex][$scope.tickProperty] = $scope.filteredModel[index][$scope.tickProperty];
                     }
 
                     $scope.clickedItem = angular.copy(item);
@@ -414,7 +412,8 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                 // this variable is used in $scope.outputModel and to refresh the button label
                 $scope.refreshSelectedItems = function() {
                     $scope.selectedItems = [];
-                    angular.forEach($scope.inputModel, function(value, key) {
+
+                    angular.forEach(resolvedInputModel, function(value, key) {
                         if (typeof value !== 'undefined') {
                             if (typeof value[$scope.groupProperty] === 'undefined') {
                                 if (value[$scope.tickProperty] === true) {
@@ -423,6 +422,7 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                             }
                         }
                     });
+
                 };
 
                 // refresh output model as well
@@ -522,7 +522,7 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                     $scope.checkBoxLayer = element.children()[1];
 
                     // We grab the button
-                    clickedEl = element.children()[0];
+                    var clickedEl = element.children()[0];
 
                     // Just to make sure.. had a bug where key events were recorded twice
                     angular.element(document).unbind('click', $scope.externalClickListener);
@@ -819,14 +819,17 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                     }
                 }
 
+                $scope.$watch('filteredModel', function(newVal) {
+                    $scope.refreshSelectedItems();
+                }, true);
+
                 // watch1, for changes in input model property
                 // updates multi-select when user select/deselect a single checkbox programatically
                 // https://github.com/isteven/angular-multi-select/issues/8
                 $scope.$watch('inputModel', function(newVal) {
                     if (newVal) {
-                        $scope.refreshSelectedItems();
-                        $scope.refreshOutputModel();
                         $scope.refreshButton();
+
                         if ($scope.clickedItem !== null) {
                             $timeout(function() {
                                 $scope.onItemClick({
@@ -835,6 +838,15 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                                 $scope.clickedItem = null;
                             }, 0);
                         }
+
+                        $q.when(newVal).then(function(wrappedVal) {
+                            if (wrappedVal.$promise) {
+                                wrappedVal.$promise.then(function() {
+                                    $scope.refreshOutputModel();
+                                });
+                            }
+
+                        });
                     }
                 }, true);
 
@@ -842,13 +854,22 @@ angular.module('multi-select', ['ng']).directive('multiSelect', ['$sce', '$timeo
                 // this on updates the multi-select when a user load a whole new input-model. We also update the $scope.backUp variable
                 $scope.$watch('inputModel', function(newVal) {
                     if (newVal) {
-                        $scope.backUp = angular.copy($scope.inputModel);
-                        $scope.updateFilter();
-                        $scope.prepareGrouping();
-                        $scope.prepareIndex();
-                        $scope.refreshSelectedItems();
-                        $scope.refreshOutputModel();
                         $scope.refreshButton();
+                        $q.when(newVal).then(function(inputVal) {
+                            if (inputVal.$promise) {
+                                inputVal.$promise.then(function(resolveInputVal) {
+                                    resolvedInputModel = resolveInputVal;
+                                    $scope.backUp = angular.copy(inputVal);
+                                    $scope.updateFilter();
+                                    $scope.prepareGrouping();
+                                    $scope.prepareIndex();
+                                    $scope.refreshSelectedItems();
+                                    $scope.refreshOutputModel();
+
+                                });
+                            }
+
+                        });
                     }
                 });
 
